@@ -1,0 +1,11 @@
+{
+  "db": {
+    "host": "127.0.0.1",
+    "port": 1521,
+    "service_name": "ORCL",
+    "username": "system",
+    "password": ""
+  },
+  "last_sql_folder": "sql",
+  "last_output_excel": "output/export.xlsx"
+}
