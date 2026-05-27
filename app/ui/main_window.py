@@ -26,6 +26,7 @@ from app.models.config_model import AppConfig, DbConfig
 from app.services.db_service import OracleDbService
 from app.services.excel_service import ExcelExportService
 from app.services.log_service import configure_logging
+from app.services.parameter_service import SqlParameterError, parse_sql_parameters
 from app.services.sql_service import SqlService
 from app.utils.file_utils import ensure_xlsx_suffix, project_root, resolve_app_path
 
@@ -39,6 +40,8 @@ class ExportRequest:
     db: DbConfig
     sql_folder: Path
     output_excel: Path
+    sql_parameters: dict[str, str]
+    sql_parameters_text: str
 
 
 class BatchExportWorker(QThread):
@@ -68,7 +71,7 @@ class BatchExportWorker(QThread):
                 for sql_file in sql_files:
                     try:
                         sql = sql_service.read_sql(sql_file)
-                        result = db_service.execute_query(sql)
+                        result = db_service.execute_query(sql, self._request.sql_parameters)
                         sheet_name = excel_service.write_dataframe(sql_file.stem, result.dataframe)
                         self._emit_info(
                             f"{sql_file.name} Success Rows={result.row_count} "
@@ -135,6 +138,9 @@ class MainWindow(QMainWindow):
         self.password_input.setEchoMode(QLineEdit.Password)
         self.sql_folder_input = QLineEdit()
         self.output_excel_input = QLineEdit()
+        self.sql_parameters_input = QTextEdit()
+        self.sql_parameters_input.setPlaceholderText("DATA_DATE=20260527\nBRANCH_ID=001")
+        self.sql_parameters_input.setFixedHeight(92)
         self.test_connect_button = QPushButton("Test Connect")
         self.execute_button = QPushButton("Execute")
         self.log_area = QTextEdit()
@@ -177,6 +183,11 @@ class MainWindow(QMainWindow):
         file_layout.addWidget(output_browse_button, 1, 2)
         file_layout.setColumnStretch(1, 1)
         root_layout.addWidget(file_group)
+
+        parameters_group = QGroupBox("SQL Parameters")
+        parameters_layout = QVBoxLayout(parameters_group)
+        parameters_layout.addWidget(self.sql_parameters_input)
+        root_layout.addWidget(parameters_group)
 
         actions_layout = QHBoxLayout()
         actions_layout.addStretch(1)
@@ -252,6 +263,7 @@ class MainWindow(QMainWindow):
         self.password_input.setText(self._config.db.password)
         self.sql_folder_input.setText(self._config.last_sql_folder)
         self.output_excel_input.setText(self._config.last_output_excel)
+        self.sql_parameters_input.setPlainText(self._config.last_sql_parameters)
 
     def _browse_sql_folder(self) -> None:
         folder = QFileDialog.getExistingDirectory(self, "Select SQL Folder", self.sql_folder_input.text())
@@ -333,6 +345,7 @@ class MainWindow(QMainWindow):
 
         sql_folder_text = self.sql_folder_input.text().strip()
         output_excel_text = self.output_excel_input.text().strip()
+        sql_parameters_text = self.sql_parameters_input.toPlainText()
         sql_folder = resolve_app_path(sql_folder_text)
 
         if not sql_folder_text or not sql_folder.exists() or not sql_folder.is_dir():
@@ -342,11 +355,18 @@ class MainWindow(QMainWindow):
             self._show_error("Output XLSX is required.")
             return None
         output_excel = ensure_xlsx_suffix(resolve_app_path(output_excel_text))
+        try:
+            sql_parameters = parse_sql_parameters(sql_parameters_text)
+        except SqlParameterError as exc:
+            self._show_error(f"Invalid SQL Parameters:\n{exc}")
+            return None
 
         return ExportRequest(
             db=db_config,
             sql_folder=sql_folder,
             output_excel=output_excel,
+            sql_parameters=sql_parameters,
+            sql_parameters_text=sql_parameters_text,
         )
 
     def _save_config(self, request: ExportRequest) -> None:
@@ -354,6 +374,7 @@ class MainWindow(QMainWindow):
             db=request.db,
             last_sql_folder=str(request.sql_folder),
             last_output_excel=str(request.output_excel),
+            last_sql_parameters=request.sql_parameters_text,
         )
         self._config.save(CONFIG_PATH)
 
@@ -364,10 +385,12 @@ class MainWindow(QMainWindow):
 
         sql_folder_text = self.sql_folder_input.text().strip()
         output_excel_text = self.output_excel_input.text().strip()
+        sql_parameters_text = self.sql_parameters_input.toPlainText()
         self._config = AppConfig(
             db=db_config,
             last_sql_folder=sql_folder_text,
             last_output_excel=output_excel_text,
+            last_sql_parameters=sql_parameters_text,
         )
         self._config.save(CONFIG_PATH)
 

@@ -7,5 +7,6 @@
     "password": ""
   },
   "last_sql_folder": "sql",
-  "last_output_excel": "output/export.xlsx"
+  "last_output_excel": "output/export.xlsx",
+  "last_sql_parameters": "1=2\n2=3\n4=5\n6=1\n8=9\n10=11\n11=12"
 }

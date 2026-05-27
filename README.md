@@ -12,6 +12,7 @@
 - 📘 輸出一份 `.xlsx` Excel 檔
 - 📄 每個 SQL 檔案會變成 Excel 裡的一個工作表
 - ✅ 單一 SQL 失敗時不會中斷，會繼續執行下一個
+- 🧩 支援 Oracle 命名參數，例如 `:DATA_DATE`
 - 🧪 可先按 `Test Connect` 測試 Oracle 連線
 - 💾 關閉視窗後會記住上次輸入的連線資訊與路徑
 
@@ -48,6 +49,7 @@ python -m venv .venv
 5. Password
 6. SQL Folder
 7. Output XLSX
+8. SQL Parameters
 
 建議先按 `Test Connect`，確認資料庫連線成功後，再按 `Execute` 開始匯出。
 
@@ -80,6 +82,38 @@ WHERE ROWNUM <= 100
 - `utf-8`
 - `cp950`
 - `big5`
+
+## 🧩 SQL 參數怎麼用？
+
+SQL 可以使用 Oracle 命名參數：
+
+```sql
+SELECT *
+FROM CUSTOMER
+WHERE DATA_DATE = :DATA_DATE
+```
+
+在畫面的 `SQL Parameters` 輸入：
+
+```text
+DATA_DATE=20260527
+```
+
+多個參數請一行一個：
+
+```text
+DATA_DATE=20260527
+BRANCH_ID=001
+```
+
+參數值會全部以字串傳給 Oracle。若需要日期或數字型別，建議在 SQL 中明確轉換：
+
+```sql
+WHERE DATA_DATE = TO_DATE(:DATA_DATE, 'YYYYMMDD')
+  AND AMOUNT >= TO_NUMBER(:MIN_AMOUNT)
+```
+
+空白行會被忽略；參數名稱不可重複，也不可省略 `=`。
 
 ## 📘 Excel 輸出結果
 

@@ -39,14 +39,14 @@ class OracleDbService:
             self._connection.close()
             self._connection = None
 
-    def execute_query(self, sql: str) -> QueryResult:
+    def execute_query(self, sql: str, parameters: dict[str, str] | None = None) -> QueryResult:
         if self._connection is None:
             raise RuntimeError("Database is not connected.")
 
         cleaned_sql = _clean_sql(sql)
         started_at = time.perf_counter()
         with self._connection.cursor() as cursor:
-            cursor.execute(cleaned_sql)
+            cursor.execute(cleaned_sql, parameters or {})
             columns = [item[0] for item in cursor.description or []]
             rows = cursor.fetchall()
 

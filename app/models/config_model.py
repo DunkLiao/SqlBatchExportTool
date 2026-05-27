@@ -20,6 +20,7 @@ class AppConfig:
     db: DbConfig = field(default_factory=DbConfig)
     last_sql_folder: str = ""
     last_output_excel: str = ""
+    last_sql_parameters: str = ""
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "AppConfig":
@@ -35,6 +36,7 @@ class AppConfig:
             db=db,
             last_sql_folder=str(data.get("last_sql_folder", "")),
             last_output_excel=str(data.get("last_output_excel", "")),
+            last_sql_parameters=str(data.get("last_sql_parameters", "")),
         )
 
     @classmethod
