@@ -35,7 +35,7 @@ if errorlevel 1 (
 )
 
 echo Building SqlBatchExportTool.exe...
-"%PYTHON_EXE%" -m PyInstaller --onefile --windowed --name SqlBatchExportTool main.py
+"%PYTHON_EXE%" -m PyInstaller --clean --onefile --windowed --name SqlBatchExportTool --collect-all cryptography main.py
 
 if errorlevel 1 (
     echo.
