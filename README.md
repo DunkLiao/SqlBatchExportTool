@@ -12,7 +12,7 @@
 - 📘 輸出一份 `.xlsx` Excel 檔
 - 📄 每個 SQL 檔案會變成 Excel 裡的一個工作表
 - ✅ 單一 SQL 失敗時不會中斷，會繼續執行下一個
-- 🧩 支援 Oracle 命名參數，例如 `:DATA_DATE`
+- 🧩 支援 Oracle 命名參數，例如 `:DATA_DATE`，也支援 SQL*Plus 替代參數，例如 `&1`
 - 🧪 可先按 `Test Connect` 測試 Oracle 連線
 - 💾 關閉視窗後會記住上次輸入的連線資訊與路徑
 
@@ -114,6 +114,28 @@ WHERE DATA_DATE = TO_DATE(:DATA_DATE, 'YYYYMMDD')
 ```
 
 空白行會被忽略；參數名稱不可重複，也不可省略 `=`。
+
+也可以使用 SQL*Plus 風格的 `&` 替代參數：
+
+```sql
+SELECT *
+FROM RPT_CR3000
+WHERE SS_SEQ = '&1'
+```
+
+在畫面的 `SQL Parameters` 輸入：
+
+```text
+1=20260527
+```
+
+也可以寫成：
+
+```text
+&1=20260527
+```
+
+`&NAME` 也支援相同格式，例如 SQL 使用 `&BRANCH_ID` 時，可輸入 `BRANCH_ID=001` 或 `&BRANCH_ID=001`。
 
 ## 📘 Excel 輸出結果
 
