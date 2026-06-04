@@ -5,7 +5,8 @@ from pathlib import Path
 import logging
 import traceback
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import (
     QFileDialog,
     QFormLayout,
@@ -136,6 +137,13 @@ class MainWindow(QMainWindow):
         self.username_input = QLineEdit()
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.Password)
+        self._password_visible = False
+        self._password_visibility_action = self.password_input.addAction(
+            self._create_password_visibility_icon(visible=False),
+            QLineEdit.TrailingPosition,
+        )
+        self._password_visibility_action.setToolTip("Show password")
+        self._password_visibility_action.triggered.connect(self._toggle_password_visibility)
         self.sql_folder_input = QLineEdit()
         self.output_excel_input = QLineEdit()
         self.sql_parameters_input = QTextEdit()
@@ -203,6 +211,41 @@ class MainWindow(QMainWindow):
         root_layout.addWidget(log_group, 1)
 
         self.setCentralWidget(central)
+
+    def _toggle_password_visibility(self) -> None:
+        self._password_visible = not self._password_visible
+        if self._password_visible:
+            self.password_input.setEchoMode(QLineEdit.Normal)
+            self._password_visibility_action.setToolTip("Hide password")
+        else:
+            self.password_input.setEchoMode(QLineEdit.Password)
+            self._password_visibility_action.setToolTip("Show password")
+        self._password_visibility_action.setIcon(
+            self._create_password_visibility_icon(visible=self._password_visible)
+        )
+
+    def _create_password_visibility_icon(self, visible: bool) -> QIcon:
+        pixmap = QPixmap(24, 24)
+        pixmap.fill(Qt.transparent)
+
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        pen = QPen(QColor("#e7eaf0"))
+        pen.setWidth(2)
+        painter.setPen(pen)
+
+        eye_path = QPainterPath()
+        eye_path.moveTo(3, 12)
+        eye_path.cubicTo(7, 5, 17, 5, 21, 12)
+        eye_path.cubicTo(17, 19, 7, 19, 3, 12)
+        painter.drawPath(eye_path)
+        painter.drawEllipse(10, 10, 4, 4)
+
+        if visible:
+            painter.drawLine(5, 19, 19, 5)
+
+        painter.end()
+        return QIcon(pixmap)
 
     def _apply_dark_style(self) -> None:
         self.setStyleSheet(
